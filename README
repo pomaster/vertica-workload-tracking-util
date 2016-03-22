@@ -1,0 +1,43 @@
+Vertica workload tracking package is developed for the purpose of workload performance monitoring and tuning.  Please
+send your comments and suggestions to po.hong@hpe.com.
+
+     
+1.      Enable dc_slow_events on the cluster. This dc table is disabled by default in 7.1.2.  To enable, do the following:
+ 
+select set_data_collector_policy('SlowEvents','1000','100000');   
+ 
+Use SELECT GET_DATA_COLLECTOR_POLICY('SlowEvents') to check before and after. 
+ 
+2.     Create a vertica_stats schema and then create three Vertica tables as in the vertica_stats_tracking_table.ddl script.  
+This is a one time job.
+
+You need to add the Vertica user/password to the following scripts. 
+ 
+3.     Take a look at the vertica_cpu_io_mem_tracking.sh script.  Launch this script in the background and let it run “forever” like a daemon 
+(by using a HUGEMAXSEQ say 1000000). This script wakes up every five minutes to collect some detailed Linux/Vertica resource usage info and load it 
+into three Vertica historical tables (created in Step 2). You may want to test it by using MAXSEQ=5 first.  
+
+Remember to grant proper execution rights to those sh scripts. 
+
+Example: nohup ./vertica_cpu_io_mem_tracking.sh >/dev/null 2>&1 &
+
+If everything works fine for a few days, you can optionally set up a cron job to run this script every five minutes to make sure that it survives a Linux 
+reboot.
+ 
+4.     vertica_workload_metric_collect_71.sh is an “on demand” script that takes two parameters: start_time and end_time.  This script includes many 
+useful Vertica queries and it is as close to a single “consolidated useful query list” as it can be.  Make sure the time interval covers some interesting events 
+(such as your ETL jobs and heavy query workloads).   As an example: 
+ 
+Example: nohup ./vertica_workload_metric_collect_71.sh "2015-12-03 17:00:00" "2015-12-03 18:00:00" > vertica_workload_metric_collect.log 2>&1 &
+
+5.   If you want to collect the workload tracking logs for example in every two hours for a 24-hour period, run the following in the same directory as
+vertica_workload_metric_collect_71.sh (or vertica_workload_metric_collect_72.sh): 
+
+nohup ./run_workload_metric_collect.sh >run_workload_meric_collect.log 2>&1 &
+
+There will be 12 tracking logs generated in directories such as 20160302 and/or 20160303 (if across two days). 
+
+Note: There is a column name change in the dc_resource_pool_move table in Excavator (7.2) and hence a custom version: 
+vertica_workload_metric_collect_72.sh. 
+             
+

@@ -1,0 +1,42 @@
+CREATE SCHEMA vertica_stats;
+
+
+CREATE TABLE vertica_stats.cpu_io_disk
+(
+    START_TIME timestamp(0),
+    Disk_Latency_ms numeric(8,2),
+    IO_Wait_Percent float,
+    Avg_CPU_Percent float,
+    Disk_Utilization_Percent float
+)
+ORDER BY START_TIME
+SEGMENTED BY hash(START_TIME, Disk_Latency_ms, IO_Wait_Percent, Avg_CPU_Percent, Disk_Utilization_Percent) ALL NODES KSAFE 1;
+
+
+CREATE TABLE vertica_stats.concurrency_memory
+(
+    Measure_Time timestamp(0),
+    Concurrency_Level int,
+    Total_Memory_In_Use_GB int
+)
+ ORDER BY Measure_Time
+SEGMENTED BY hash(Measure_Time, Concurrency_Level, Total_Memory_In_Use_GB) ALL NODES KSAFE 1;
+
+
+CREATE TABLE vertica_stats.resource_pool_status_hist
+(
+    MEASURE_Time timestamp(0),
+    pool_name varchar(128),
+    node_name varchar(128),
+    Used_Memory_KB int,
+    running_query_count int
+)
+ORDER BY MEASURE_Time,
+          pool_name,
+          node_name,
+          Used_Memory_KB,
+          running_query_count
+SEGMENTED BY hash(MEASURE_Time, Used_Memory_KB, running_query_count, pool_name, node_name) ALL NODES KSAFE 1;
+
+
+SELECT MARK_DESIGN_KSAFE(1);
